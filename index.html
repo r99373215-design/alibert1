@@ -439,6 +439,10 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(8px);}
 
     /* ENHANCEMENTS */
+    .link-pills{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 2px;scrollbar-width:none;}
+    .link-pills::-webkit-scrollbar{display:none;}
+    .lpill{flex:0 0 auto;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:22px;padding:11px 18px;font:600 13px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;backdrop-filter:blur(10px);}
+    .lpill:active{background:rgba(255,255,255,0.18);transform:scale(.97);}
     #fadeVeil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9000;transition:opacity .3s ease;}
     #fadeVeil.on{opacity:1;pointer-events:all;transition-duration:.16s;}
     .ord-filter{display:flex;gap:8px;padding:0 16px 10px;}
@@ -502,6 +506,15 @@
         <div class="hero-title">ALBERT<br>SHOP</div>
         <div class="hero-subtitle">Одежда · Обувь · Аксессуары</div>
       </div>
+    </div>
+
+    <div class="link-pills" id="linkPills">
+      <a class="lpill" href="https://t.me/AlbertShop1/3" data-tg>Перед покупкой</a>
+      <a class="lpill" href="https://t.me/+CV-ScIOB98o1YzE6" data-tg>Вещи под заказ</a>
+      <a class="lpill" href="https://t.me/albertshop1" data-tg>Канал</a>
+      <a class="lpill" href="https://t.me/AlbertshopReviews" data-tg>Отзывы</a>
+      <a class="lpill" href="https://t.me/xqwex0" data-tg>Поддержка</a>
+      <button class="lpill" onclick="openActiveOrders()">Заказы</button>
     </div>
 
     <div class="search-container">
@@ -1697,7 +1710,7 @@ document.addEventListener("click", function(event) {
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){aCloseModal();aCloseConfirm();}});
 
     // ═══ ENHANCEMENTS ═══
-    const ADMIN_EMAIL = 'r99373215@gmail.com';
+    const ADMIN_EMAILS = ['r99373215@gmail.com', 'karaboevalbert42@gmail.com'];
     const ADMIN_USERNAME = 'xqwex0';
     const _tgUser = () => window.Telegram?.WebApp?.initDataUnsafe?.user;
     const _esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1738,7 +1751,7 @@ document.addEventListener("click", function(event) {
         'Товары': o.items.map(i => `${i.name} x${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('; '),
         'Итого': o.total + ' ₽'
       };
-      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, { method:'POST', headers:{'Content-Type':'application/json', Accept:'application/json'}, body: JSON.stringify(body) })
+      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAILS[0], { method:'POST', headers:{'Content-Type':'application/json', Accept:'application/json'}, body: JSON.stringify(body) })
         .then(r => { o.emailed = r.ok; saveOrders(); }).catch(() => { o.emailed = false; saveOrders(); });
     }
     const _pco = processCheckoutOrder;
@@ -1816,7 +1829,7 @@ document.addEventListener("click", function(event) {
       document.getElementById('paymentTotalSum').innerText = Number(o.total).toLocaleString('ru-RU') + ' ₽';
     };
     // email: sent when the client picks a payment method
-    sendOrderEmail = function (o) {
+    window.sendOrderEmailTo = function (o, email) {
       const u = _tgUser();
       const data = {
         _subject: `Новый заказ ${o.id} — ${Number(o.total).toLocaleString('ru-RU')} ₽`, _template: 'table', _captcha: 'false',
@@ -1830,12 +1843,12 @@ document.addEventListener("click", function(event) {
           let fr = document.getElementById('mailFrame');
           if (!fr) { fr = document.createElement('iframe'); fr.name = fr.id = 'mailFrame'; fr.style.display = 'none'; document.body.appendChild(fr); }
           const f = document.createElement('form'); f.method = 'POST'; f.target = 'mailFrame'; f.style.display = 'none';
-          f.action = 'https://formsubmit.co/' + ADMIN_EMAIL;
+          f.action = 'https://formsubmit.co/' + email;
           Object.entries(data).forEach(([k, v]) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i); });
           document.body.appendChild(f); f.submit(); setTimeout(() => f.remove(), 3000); o.emailed = true; saveOrders();
         } catch (e) { o.emailed = false; saveOrders(); }
       };
-      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
+      fetch('https://formsubmit.co/ajax/' + email, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
         .then(r => r.json()).then(j => {
           o.emailed = String(j.success) === 'true'; saveOrders();
           const dev = /^(localhost|127\.|192\.168\.)/.test(location.hostname) || document.getElementById('adminMenuItem')?.style.display === 'flex';
@@ -1844,6 +1857,7 @@ document.addEventListener("click", function(event) {
         })
         .catch(viaForm);
     };
+    sendOrderEmail = function (o) { ADMIN_EMAILS.forEach(e => sendOrderEmailTo(o, e)); };
     // ── Telegram bot notification (instant, no email needed) ──
     // Fill these two values: token from @BotFather, your numeric id from @userinfobot
     const TG_BOT_TOKEN = '8660028827:AAFX0knahCJtUx1ep5C2a59Ow-aW9IreiDI';
@@ -1945,6 +1959,11 @@ document.addEventListener("click", function(event) {
       for (const f of files) { try { aAddImgRow(await aCompress(f)); } catch (e) { showToast('Не удалось открыть фото'); } }
       if (files.length) showToast('Добавлено фото: ' + files.length, true);
     }
+
+    document.querySelectorAll('a[data-tg]').forEach(a => a.addEventListener('click', e => {
+      if (webapp && webapp.openTelegramLink) { e.preventDefault(); webapp.openTelegramLink(a.href); }
+      else { e.preventDefault(); window.open(a.href, '_blank'); }
+    }));
 
     // Admin entry (client-side only) + web deep link  #p<id>
     if (_tgUser()?.username === ADMIN_USERNAME || ADMIN_IDS.includes(_tgUser()?.id) || location.hash === '#admin') document.getElementById('adminMenuItem').style.display = 'flex';
