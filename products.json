@@ -1,0 +1,31 @@
+[
+  {
+    "id": 1,
+    "name": "Товар 1",
+    "category": "Кроссовки",
+    "price": 9900,
+    "description": "Лёгкая модель с мягкой подошвой, которая подходит для повседневной носки и городских прогулок.",
+    "images": ["pa.jpg", "pa2.jpg", "pa3.jpg", "pa4.jpg"],
+    "image": "pa.jpg",
+    "sizes": ["S", "M", "L"]
+  },
+  {
+    "id": 2,
+    "name": "Palm Angels velour pants",
+    "category": "Штаны",
+    "price": 10990,
+    "description": "Велюровые штаны с ярким дизайном и комфортной посадкой.",
+    "images": ["palm.jpg", "palm2.jpg", "palm3.jpg"],
+    "image": "palm.jpg",
+    "sizes": ["S", "M", "L", "XL"]
+  },
+  {
+    "id": 3,
+    "name": "Классическая футболка",
+    "category": "Футболки",
+    "price": 4500,
+    "description": "Удобная базовая футболка из мягкого хлопка для каждого дня.",
+    "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
+    "sizes": ["XS", "S", "M", "L", "XL"]
+  }
+]

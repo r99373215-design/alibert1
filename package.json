@@ -1,0 +1,20 @@
+{
+  "name": "albert-shop-telegram-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot for Albert Shop",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "node bot.js"
+  },
+  "keywords": [
+    "telegram",
+    "shop",
+    "bot"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "telegraf": "^4.16.1"
+  }
+}
