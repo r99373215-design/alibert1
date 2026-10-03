@@ -439,9 +439,9 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(8px);}
 
     /* ENHANCEMENTS */
-    .link-pills{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 2px;scrollbar-width:none;}
+    .link-pills{display:flex;gap:7px;overflow-x:auto;scroll-behavior:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding:12px 16px 2px;scrollbar-width:none;}
     .link-pills::-webkit-scrollbar{display:none;}
-    .lpill{flex:0 0 auto;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:22px;padding:11px 18px;font:600 13px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;backdrop-filter:blur(10px);}
+    .lpill{flex:0 0 auto;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:22px;padding:9px 15px;font:600 12px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;backdrop-filter:blur(10px);}
     .lpill:active{background:rgba(255,255,255,0.18);transform:scale(.97);}
     #fadeVeil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9000;transition:opacity .3s ease;}
     #fadeVeil.on{opacity:1;pointer-events:all;transition-duration:.16s;}
@@ -1964,6 +1964,25 @@ document.addEventListener("click", function(event) {
       if (webapp && webapp.openTelegramLink) { e.preventDefault(); webapp.openTelegramLink(a.href); }
       else { e.preventDefault(); window.open(a.href, '_blank'); }
     }));
+
+    // slow auto-scroll of the link buttons (pauses while the user touches them)
+    (function () {
+      const el = document.getElementById('linkPills'); if (!el) return;
+      let pos = 0, dir = 1, pausedUntil = 0, SPEED = 0.35; // pixels per frame — lower = slower
+      const pause = () => { pausedUntil = Date.now() + 4000; };
+      ['touchstart', 'pointerdown', 'wheel', 'mouseenter'].forEach(ev => el.addEventListener(ev, pause, { passive: true }));
+      el.addEventListener('scroll', () => { if (Date.now() < pausedUntil) pos = el.scrollLeft; }, { passive: true });
+      (function tick() {
+        const max = el.scrollWidth - el.clientWidth;
+        if (max > 4 && Date.now() >= pausedUntil && !document.hidden) {
+          pos += SPEED * dir;
+          if (pos >= max) { pos = max; dir = -1; pausedUntil = Date.now() + 1200; }
+          if (pos <= 0) { pos = 0; dir = 1; pausedUntil = Date.now() + 1200; }
+          el.scrollLeft = pos;
+        }
+        requestAnimationFrame(tick);
+      })();
+    })();
 
     // Admin entry (client-side only) + web deep link  #p<id>
     if (_tgUser()?.username === ADMIN_USERNAME || ADMIN_IDS.includes(_tgUser()?.id) || location.hash === '#admin') document.getElementById('adminMenuItem').style.display = 'flex';
