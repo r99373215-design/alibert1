@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Albert Shop</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -799,7 +801,7 @@
   <!-- ADMIN -->
   <div id="screenAdmin" class="screen">
     <div class="back-nav" onclick="navigateTo('screenCatalog')">‹ Назад</div>
-    <div class="section-head" style="padding-top:0;">⚙️ Администратор</div>
+    <div class="section-head" style="padding-top:0;">⚙️ Администратор <span style="font-size:11px;color:#8e8e93;font-weight:600">v2-gallery</span></div>
     <div class="admin-stats">
       <div class="admin-stat"><div class="admin-stat-label">Товаров</div><div class="admin-stat-val" id="aStatTotal" style="color:var(--accent);">0</div></div>
       <div class="admin-stat"><div class="admin-stat-label">Категорий</div><div class="admin-stat-val" id="aStatCats" style="color:#ffcc00;">0</div></div>
@@ -837,7 +839,9 @@
       <div class="aform-group">
         <label class="aform-label">Фото <span>*</span> <span style="font-weight:400;color:#666;text-transform:none;font-size:10px;">(имена файлов: photo.jpg)</span></label>
         <div class="img-list" id="aImgList"></div>
-        <button class="btn-add-img-row" onclick="aAddImgRow()">+ Добавить фото</button>
+        <button class="btn-add-img-row" style="color:#fff;background:var(--accent);border-color:var(--accent)" onclick="document.getElementById('aFileInp').click()">📷 Загрузить из галереи / папки</button>
+        <button class="btn-add-img-row" style="margin-top:6px" onclick="aAddImgRow()">+ Имя файла (photo.jpg)</button>
+        <input type="file" id="aFileInp" accept="image/*" multiple style="display:none" onchange="aPickPhotos(this)">
       </div>
       <div class="aform-group">
         <label class="aform-label">Размеры <span>*</span></label>
@@ -1638,7 +1642,7 @@ document.addEventListener("click", function(event) {
       }else{
         ['afName','afPrice','afDesc','afSku','afBrand','afCondition','afComplect'].forEach(id=>document.getElementById(id).value='');
         document.getElementById('afStock').value='1';
-        document.getElementById('afCat').value='Кофты';aAddImgRow('');
+        document.getElementById('afCat').value='Кофты';
       }
       aRenderSizes();document.getElementById('aModalOverlay').classList.add('show');
     }
@@ -1721,7 +1725,7 @@ document.addEventListener("click", function(event) {
       let chips = document.getElementById('ordFilter');
       if (!chips) { chips = document.createElement('div'); chips.id = 'ordFilter'; chips.className = 'ord-filter'; list.parentNode.insertBefore(chips, list); }
       chips.innerHTML = [['active','Активные'],['all','Все']].map(([k,l]) => `<button class="${ordersFilter===k?'on':''}" onclick="ordersFilter='${k}';renderProfilePage()">${l}</button>`).join('');
-      [...list.children].forEach((c, i) => { const o = savedOrders[i]; if (o && ordersFilter === 'active' && o.status.join().includes('Отмен')) c.style.display = 'none'; });
+      [...list.children].forEach((c, i) => { const o = savedOrders[i]; if (o && ordersFilter === 'active' && /Отмен|Выполн/.test(o.status.join())) c.style.display = 'none'; });
     };
 
     // 3. Email notification about every new order
@@ -1843,13 +1847,14 @@ document.addEventListener("click", function(event) {
     // ── Telegram bot notification (instant, no email needed) ──
     // Fill these two values: token from @BotFather, your numeric id from @userinfobot
     const TG_BOT_TOKEN = '8660028827:AAFX0knahCJtUx1ep5C2a59Ow-aW9IreiDI';
-    const TG_CHAT_ID = '7760326635';
+    const TG_CHAT_IDS = ['7760326635', '1727558676']; // both people get every order
+    const ADMIN_IDS = [7760326635, 1727558676];
     function sendOrderTelegram(o) {
-      if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+      if (!TG_BOT_TOKEN || !TG_CHAT_IDS.length) return;
       const text = `🛍 Новый заказ ${o.id}\n💳 ${o.payMethod || '—'}\n👤 ${o.fio || '—'}\n📞 ${o.phone}\n✈️ ${o.tg || '—'}\n🚚 ${o.delivery}\n📍 ${o.address || '—'}\n\n` +
         o.items.map(i => `• ${i.name} x${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('\n') + `\n\n💰 Итого: ${Number(o.total).toLocaleString('ru-RU')} ₽`;
-      fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TG_CHAT_ID, text }) })
-        .then(r => r.json()).then(j => { o.tgSent = !!j.ok; saveOrders(); console.log('Telegram bot response:', j); }).catch(e => console.warn('Telegram bot error', e));
+      TG_CHAT_IDS.forEach(id => fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: id, text }) })
+        .then(r => r.json()).then(j => { o.tgSent = o.tgSent || !!j.ok; saveOrders(); console.log('Telegram bot response for', id, j); }).catch(e => console.warn('Telegram bot error', e)));
     }
     triggerPaymentUnavailable = function (method) {
       const o = lastOrder || savedOrders[0];
@@ -1906,11 +1911,46 @@ document.addEventListener("click", function(event) {
       loadForm(); renderItemsGrid(); syncCartIndicators(); syncFavBadge();
     })();
 
+    // ── Product links open the Mini App (via the bot), not your personal chat ──
+    const APP_SHORT_NAME = ''; // optional: short name from BotFather /newapp, gives t.me/<bot>/<name>?startapp=pID
+    let BOT_REAL_USERNAME = safeGet('shopBotUser', '');
+    if (!BOT_REAL_USERNAME && TG_BOT_TOKEN) fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getMe`).then(r => r.json()).then(j => { if (j.ok) { BOT_REAL_USERNAME = j.result.username; safeSet('shopBotUser', BOT_REAL_USERNAME); } }).catch(() => {});
+    const SITE_URL = ''; // optional: your real site address, e.g. 'https://albertshop.netlify.app/'; empty = the address the app is opened from
+    getProductLink = function (id) {
+      const base = (SITE_URL || location.href).split('#')[0].split('?')[0];
+      return `${base}?p=${id}`;
+    };
+
+
+    // ── Photos from gallery / PC folder (resized, stored as data URLs) ──
+    aAddImgRow = function (val = '') {
+      const row = document.createElement('div'); row.className = 'img-row';
+      const isData = String(val).startsWith('data:');
+      row.innerHTML = (isData ? `<img src="${val}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"><span style="flex:1;font-size:12px;color:#8e8e93">Фото из галереи</span><input type="hidden" class="aimg-input" value="${val}">`
+        : `<input type="text" class="aform-input aimg-input" placeholder="photo.jpg" value="${_esc(val)}">`) + `<button class="btn-rm-img" onclick="this.parentElement.remove()">✕</button>`;
+      document.getElementById('aImgList').appendChild(row);
+    };
+    function aCompress(file, max = 900, q = 0.72) {
+      return new Promise((res, rej) => {
+        const fr = new FileReader(); fr.onerror = rej;
+        fr.onload = () => { const img = new Image(); img.onerror = rej;
+          img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
+            c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', q)); };
+          img.src = fr.result; };
+        fr.readAsDataURL(file);
+      });
+    }
+    async function aPickPhotos(inp) {
+      const files = [...inp.files]; inp.value = '';
+      for (const f of files) { try { aAddImgRow(await aCompress(f)); } catch (e) { showToast('Не удалось открыть фото'); } }
+      if (files.length) showToast('Добавлено фото: ' + files.length, true);
+    }
+
     // Admin entry (client-side only) + web deep link  #p<id>
-    if (_tgUser()?.username === ADMIN_USERNAME || location.hash === '#admin') document.getElementById('adminMenuItem').style.display = 'flex';
+    if (_tgUser()?.username === ADMIN_USERNAME || ADMIN_IDS.includes(_tgUser()?.id) || location.hash === '#admin') document.getElementById('adminMenuItem').style.display = 'flex';
     window.addEventListener('load', () => {
-      const m = location.hash.match(/^#p(\d+)$/);
-      if (m && PRODUCTS.some(p => p.id === +m[1])) setTimeout(() => viewProductDetails(+m[1]), 800);
+      const openFromHash = () => { const m = location.search.match(/[?&]p=(\d+)/) || location.hash.match(/^#p(\d+)$/); if (m && PRODUCTS.some(p => p.id === +m[1])) viewProductDetails(+m[1]); };
+      setTimeout(openFromHash, 800); window.addEventListener('hashchange', openFromHash);
       savedOrders.filter(o => o.sent && o.emailed !== true).forEach(sendOrderEmail);
     });
     trackUser();
