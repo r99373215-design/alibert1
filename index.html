@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Albert Shop</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     :root {
@@ -437,6 +435,23 @@
     .toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(255,59,48,0.95);color:#fff;padding:11px 22px;border-radius:28px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.3s;z-index:500;text-align:center;width:88%;max-width:380px;}
     .toast.success-toast{background:rgba(36,178,75,0.95);}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(8px);}
+
+    /* ENHANCEMENTS */
+    #fadeVeil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9000;transition:opacity .3s ease;}
+    #fadeVeil.on{opacity:1;pointer-events:all;transition-duration:.16s;}
+    .ord-filter{display:flex;gap:8px;padding:0 16px 10px;}
+    .ord-filter button{background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);border-radius:20px;padding:7px 14px;font:600 12px Inter,sans-serif;cursor:pointer;}
+    .ord-filter button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .adm-box{margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+    .adm-box h4{font-size:14px;font-weight:800;margin-bottom:10px;}
+    .adm-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);font-size:12px;}
+    .adm-row:first-of-type{border-top:none;}
+    .adm-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 10px;font-size:12px;margin:0 6px 6px 0;}
+    .adm-chip b{cursor:pointer;color:var(--error);}
+    .adm-btn{background:var(--surface2);border:1px solid #333;color:#fff;border-radius:9px;padding:7px 11px;font:600 12px Inter,sans-serif;cursor:pointer;white-space:nowrap;}
+    .adm-btn.red{color:var(--error);} .adm-btn.green{color:var(--green);}
+    .adm-in{flex:1;min-width:0;background:var(--surface2);border:1px solid #333;color:#fff;border-radius:9px;padding:9px 11px;font:500 13px Inter,sans-serif;}
+    #banScreen{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:16px;font-weight:700;}
   </style>
 </head>
 <body>
@@ -464,10 +479,12 @@
             <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
           <div class="header-menu-dropdown" id="headerMenuDropdown">
+            <a class="header-menu-item" href="https://t.me/AlbertShop1/3" target="_blank"><span class="hm-ic">📌</span>Перед покупкой</a>
+            <a class="header-menu-item" href="https://t.me/+CV-ScIOB98o1YzE6" target="_blank"><span class="hm-ic">🛍️</span>Вещи под заказ</a>
             <a class="header-menu-item" href="https://t.me/albertshop1" target="_blank"><span class="hm-ic">📣</span>Канал</a>
             <a class="header-menu-item" href="https://t.me/AlbertshopReviews" target="_blank"><span class="hm-ic">⭐</span>Отзывы</a>
             <a class="header-menu-item" href="https://t.me/xqwex0" target="_blank"><span class="hm-ic">💬</span>Поддержка</a>
-            <button class="header-menu-item" onclick="closeHeaderMenu();navigateTo('screenProfile')"><span class="hm-ic">📦</span>Заказы</button>
+            <button class="header-menu-item" onclick="closeHeaderMenu();openActiveOrders()"><span class="hm-ic">📦</span>Заказы</button>
           </div>
         </div>
       </div>
@@ -680,6 +697,7 @@
       <div class="section-head" style="padding:0 0 14px;font-size:15px;">Оформление заказа</div>
       <div class="form-group"><label class="form-label">ФИО <span>*</span></label><input type="text" id="formFio" class="form-input" placeholder="Введите полное имя"></div>
       <div class="form-group"><label class="form-label">Телефон <span>*</span></label><input type="text" id="formPhone" class="form-input" value="+7"></div>
+      <div class="form-group"><label class="form-label">Ваш Telegram <span>*</span></label><input type="text" id="formTg" class="form-input" placeholder="@username"></div>
       <div class="form-group"><label class="form-label">Доставка <span>*</span></label><select class="form-select" id="formDelivery"><option>Яндекс Доставка</option><option>СДЭК</option></select></div>
       <div class="form-group"><label class="form-label">Адрес <span>*</span></label><input type="text" id="formAddress" class="form-input" placeholder="Введите адрес доставки"></div>
     </div>
@@ -693,11 +711,11 @@
     <div class="section-head" style="padding-bottom:4px;">Оплата заказа</div>
     <div class="payment-sub-title">Выберите способ оплаты</div>
     <div class="pay-methods-list">
-      <div class="pay-card" onclick="triggerPaymentUnavailable()">
+      <div class="pay-card" onclick="triggerPaymentUnavailable('Карта или СБП')">
         <div class="pay-icon-wrap"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" fill="#2f80ed" opacity="0.15"/><rect x="2" y="5" width="20" height="14" rx="3" stroke="#2f80ed" stroke-width="1.5"/><path d="M2 10H22" stroke="#2f80ed" stroke-width="1.5"/><rect x="5" y="14" width="4" height="2" rx="0.5" fill="#2f80ed"/></svg></div>
         <div class="pay-card-title">Карта или СБП</div>
       </div>
-      <div class="pay-card" onclick="triggerPaymentUnavailable()">
+      <div class="pay-card" onclick="triggerPaymentUnavailable('Криптовалюта')">
         <div class="pay-icon-wrap"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#24b24b" opacity="0.15"/><circle cx="12" cy="12" r="9" stroke="#24b24b" stroke-width="1.5"/><path d="M12 7V17M9 9.5H15M9 14.5H15" stroke="#24b24b" stroke-width="1.5" stroke-linecap="round"/></svg></div>
         <div class="pay-card-title">Криптовалюта</div>
       </div>
@@ -777,79 +795,12 @@
     <div id="profileOrdersList"></div>
   </div>
 
-  <!-- ADMIN -->
-  <div id="screenAdmin" class="screen">
-    <div class="back-nav" onclick="navigateTo('screenCatalog')">‹ Назад</div>
-    <div class="section-head" style="padding-top:0;">⚙️ Администратор</div>
-    <div class="admin-stats">
-      <div class="admin-stat"><div class="admin-stat-label">Товаров</div><div class="admin-stat-val" id="aStatTotal" style="color:var(--accent);">0</div></div>
-      <div class="admin-stat"><div class="admin-stat-label">Категорий</div><div class="admin-stat-val" id="aStatCats" style="color:#ffcc00;">0</div></div>
-    </div>
-    <div class="admin-section-head">Товары<button class="btn-admin-add" onclick="aOpenModal()">+ Добавить</button></div>
-    <div id="adminProdList"></div>
-  </div>
-
-  <!-- ADMIN MODAL -->
-  <div class="amodal-overlay" id="aModalOverlay">
-    <div class="amodal">
-      <div class="amodal-title" id="aModalTitle">Добавить товар</div>
-      <div class="aform-group"><label class="aform-label">Название <span>*</span></label><input type="text" class="aform-input" id="afName" placeholder="Кроссовки Nike Air Max"></div>
-      <div class="aform-row">
-        <div class="aform-group"><label class="aform-label">Цена (₽) <span>*</span></label><input type="number" class="aform-input" id="afPrice" placeholder="9990"></div>
-        <div class="aform-group"><label class="aform-label">Остаток (шт.) <span>*</span></label><input type="number" class="aform-input" id="afStock" placeholder="1" min="0"></div>
-      </div>
-      <div class="aform-group"><label class="aform-label">Категория <span>*</span></label>
-        <select class="aform-select" id="afCat">
-          <option>Футболки</option><option>Худи/Зипки</option><option>Куртки/Ветровки</option><option>Штаны/Джинсы</option><option>Шорты</option><option>Обувь</option><option>Головные уборы</option><option>Аксессуары</option><option>Другое</option>
-        </select>
-      </div>
-      <div class="aform-row">
-        <div class="aform-group"><label class="aform-label">Бренд</label><input type="text" class="aform-input" id="afBrand" placeholder="Palm Angels, Gucci..." list="afBrandList"><datalist id="afBrandList"><option>Palm Angels</option><option>Stone Island</option><option>C.P Company</option><option>Gucci</option><option>Balenciaga</option><option>Amiri</option><option>Maison Margiela</option><option>Dolce Gabbana</option><option>Bape</option></datalist></div>
-        <div class="aform-group"><label class="aform-label">Состояние</label><input type="text" class="aform-input" id="afCondition" placeholder="9/10"></div>
-      </div>
-      <div class="aform-group"><label class="aform-label">Комплект</label><input type="text" class="aform-input" id="afComplect" placeholder="Отсутствует / В комплекте"></div>
-      <div class="aform-group"><label class="aform-label">Описание</label><textarea class="aform-textarea" id="afDesc" placeholder="Оригинал&#10;Состояние: 10/10"></textarea></div>
-      <div class="aform-group"><label class="aform-label">Артикул</label><input type="text" class="aform-input" id="afSku" placeholder="NIKE-001"></div>
-      <div class="aform-group">
-        <label class="aform-label">Фото <span>*</span> <span style="font-weight:400;color:#666;text-transform:none;font-size:10px;">(имена файлов: photo.jpg)</span></label>
-        <div class="img-list" id="aImgList"></div>
-        <button class="btn-add-img-row" onclick="aAddImgRow()">+ Добавить фото</button>
-      </div>
-      <div class="aform-group">
-        <label class="aform-label">Размеры <span>*</span></label>
-        <div class="sz-row">
-          <input type="text" class="aform-input" id="aSzInput" placeholder="S, M, L или 42..." onkeydown="if(event.key==='Enter'){event.preventDefault();aAddSize();}">
-          <button class="btn-sz-add" onclick="aAddSize()">+ Добавить</button>
-        </div>
-        <div class="sz-tags" id="aSzTags"></div>
-      </div>
-      <div class="amodal-actions">
-        <button class="btn-acancel" onclick="aCloseModal()">Отмена</button>
-        <button class="btn-asave" onclick="aSaveProduct()">Сохранить</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADMIN DELETE -->
-  <div class="adel-overlay" id="aDelOverlay">
-    <div class="adel-box">
-      <div class="adel-icon">🗑️</div>
-      <div class="adel-text">Удалить товар?</div>
-      <div class="adel-sub" id="aDelName">—</div>
-      <div class="adel-btns">
-        <button class="btn-adel-no" onclick="aCloseConfirm()">Отмена</button>
-        <button class="btn-adel-yes" onclick="aConfirmDelete()">Удалить</button>
-      </div>
-    </div>
-  </div>
-
   <!-- PAYMENT ALERT -->
   <div class="pay-alert-overlay" id="paymentAlertOverlay">
     <div class="pay-alert-modal">
-      <div class="pay-alert-icon">⚠️</div>
-      <div class="pay-alert-text">Данный сервис недоступен. Свяжитесь с продавцом для покупки.</div>
-      <a class="btn-alert-contact" href="https://t.me/xqwex0" target="_blank">Связаться с продавцом</a>
-      <button class="btn-alert-close" onclick="closePaymentAlert()">Закрыть</button>
+      <div class="pay-alert-icon">✅</div>
+      <div class="pay-alert-text">Ваш заказ отправлен менеджеру. Ожидайте — он напишет вам в Telegram.</div>
+      <button class="btn-alert-close" onclick="closePaymentAlert();navigateTo('screenCatalog')">Готово</button>
     </div>
   </div>
 
@@ -891,82 +842,44 @@
     // Fallback bot username for Telegram share links and profile info.
     const BOT_USERNAME = 'xqwex0';
 
-    // ── FIREBASE (shared data across every device: products, orders, visits) ──
-    const firebaseConfig = {
-      apiKey: "AIzaSyDN8xpVcMWl7uiLGp2L3GbmQSo9WK1EMUU",
-      authDomain: "albertshop-d5c1f.firebaseapp.com",
-      projectId: "albertshop-d5c1f",
-      storageBucket: "albertshop-d5c1f.firebasestorage.app",
-      messagingSenderId: "175522155941",
-      appId: "1:175522155941:web:11407c73327c7ac119ec4c",
-      measurementId: "G-GJQN62NQ4B"
-    };
-    let db = null;
-    try {
-      if (window.firebase) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
-    } catch (e) { console.error('Firebase init failed, falling back to local-only mode:', e); }
-
-    // ── PRODUCTS — live-synced from Firestore when available, localStorage as a fallback/cache ──
-    let PRODUCTS = safeParseJSON(safeGet('shopProducts', 'null'), [
-      { id:1, name:"Palm Angels velour pants", price:10990, stock:1, category:"Штаны", brand:"Palm Angels", condition:"9/10", complect:"Отсутствует", images:["palm.jpg","palm2.jpg","palm3.jpg"], desc:"Оригинал\nСостояние: 9/10", sizes:["M"], sku:"MM6-REPL" },
-      { id:2, name:"Штаны Palm Angels Rainbow", price:5990, stock:1, category:"Штаны", brand:"Palm Angels", condition:"8/10", complect:"Отсутствует", images:["pa.jpg","pa2.jpg","pa3.jpg","pa4.jpg"], desc:"Оригинал\nСостояние: 9/10", sizes:["S"], sku:"PA-RNBW" },
-    ]);
-    function saveProducts() { safeSet('shopProducts', JSON.stringify(PRODUCTS)); syncProductsToFirestore(); }
-
-    // Push the current PRODUCTS array up to Firestore so every device sees
-    // the same catalog (adds/edits upsert, removed items get deleted).
-    async function syncProductsToFirestore() {
-      if (!db) return;
-      try {
-        const snap = await db.collection('products').get();
-        const existingIds = new Set(snap.docs.map(d => d.id));
-        const currentIds = new Set(PRODUCTS.map(p => String(p.id)));
-        const batch = db.batch();
-        PRODUCTS.forEach(p => batch.set(db.collection('products').doc(String(p.id)), p));
-        existingIds.forEach(id => { if (!currentIds.has(id)) batch.delete(db.collection('products').doc(id)); });
-        await batch.commit();
-      } catch (e) { console.error('Firestore product sync failed:', e); }
+    // ── SHARED DATABASE (Supabase) ──
+    const SB_URL = 'https://zbtjttnbvmjgkrxpkmnh.supabase.co';
+    const SB_KEY = 'sb_publishable_cEEDSjuguL4wwAyNAhfXwQ_C40q5_fx';
+    const INIT_T0 = Date.now();
+    function sbFetch(path, opts = {}, timeoutMs = 8000) {
+      const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+      const o = Object.assign({}, opts);
+      o.headers = Object.assign({ apikey: SB_KEY }, opts.headers || {});
+      if (ctrl) o.signal = ctrl.signal;
+      return fetch(SB_URL + path, o).finally(() => { if (timer) clearTimeout(timer); });
     }
 
-    // One-time real-time subscription: whenever products change in Firestore
-    // (from this device, the admin panel, or anyone else), every open shop
-    // updates automatically — this is what makes new products visible to
-    // every customer instead of staying stuck in just one browser.
-    let firestoreUnsub = null;
-    async function initFirestoreSync() {
-      if (!db || firestoreUnsub) return;
+    // Products: shown instantly from the local cache, then refreshed from the shared database.
+    let PRODUCTS = safeParseJSON(safeGet('shopProducts', 'null'), []);
+    if (!Array.isArray(PRODUCTS)) PRODUCTS = [];
+
+    async function loadRemoteData() {
       try {
-        const snap = await db.collection('products').get();
-        if (snap.empty && PRODUCTS.length > 0) {
-          // First run ever: seed Firestore with the local starter catalog.
-          const batch = db.batch();
-          PRODUCTS.forEach(p => batch.set(db.collection('products').doc(String(p.id)), p));
-          await batch.commit();
-        }
-      } catch (e) { console.error('Firestore seed check failed:', e); }
-      firestoreUnsub = db.collection('products').onSnapshot(snapshot => {
-        const list = snapshot.docs.map(d => d.data());
-        if (list.length === 0 && PRODUCTS.length > 0) return; // avoid wiping the UI on a transient empty read
-        PRODUCTS = list;
+        const [pr, br] = await Promise.all([
+          sbFetch('/rest/v1/products?select=id,data&order=id.desc').then(r => r.ok ? r.json() : Promise.reject(new Error('products ' + r.status))),
+          sbFetch('/rest/v1/settings?key=eq.brands&select=value').then(r => r.ok ? r.json() : [])
+        ]);
+        PRODUCTS = pr
+          .map(r => Object.assign({}, r.data, { id: Number(r.id) }))
+          .filter(p => Array.isArray(p.images) && p.images.length && Array.isArray(p.sizes));
+        window.__remoteLoaded = true;
         safeSet('shopProducts', JSON.stringify(PRODUCTS));
-        renderItemsGrid();
-        if (typeof renderCategoryList === 'function') renderCategoryList();
-        if (document.getElementById('screenAdmin')?.classList.contains('active') && typeof renderAdminPage === 'function') renderAdminPage();
-      }, err => console.error('Firestore products listener error:', err));
-    }
-
-    // Lightweight visit log so the admin can see who opens the web app.
-    async function logVisit() {
-      if (!db) return;
-      try {
-        const tg = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        const id = tg?.id ? String(tg.id) : ('anon_' + (safeGet('anonVisitorId', '') || (() => { const v = 'anon_' + Math.random().toString(36).slice(2, 10); safeSet('anonVisitorId', v); return v; })()));
-        await db.collection('visits').doc(id).set({
-          username: tg?.username || null,
-          firstName: tg?.first_name || null,
-          lastSeen: new Date().toISOString(),
-        }, { merge: true });
-      } catch (e) { console.error('Visit log failed:', e); }
+        if (br[0] && Array.isArray(br[0].value)) {
+          BRANDS_LIST.length = 0; BRANDS_LIST.push(...br[0].value);
+          safeSet('shopBrands', JSON.stringify(BRANDS_LIST));
+        }
+        renderItemsGrid(); syncFavBadge();
+        const fav = document.getElementById('screenFavourites');
+        if (fav && fav.classList.contains('active')) renderFavouritesPage();
+      } catch (e) {
+        console.warn('Не удалось загрузить данные, показан кэш:', e);
+      }
     }
 
     const CATEGORIES_LIST = [
@@ -1013,16 +926,19 @@
       const wasFav = favourites.has(safeId);
       if (wasFav) favourites.delete(safeId); else favourites.add(safeId);
       saveFavs(); syncFavBadge(); renderItemsGrid();
-      if (!wasFav && shouldOpenPage) {
-        currentFavCategory = "Все";
-        renderFavouritesPage();
-        navigateTo('screenFavourites');
-      }
+      showToast(wasFav ? 'Удалено из избранного' : 'Добавлено в избранное', !wasFav);
       if (document.getElementById('screenFavourites') && document.getElementById('screenFavourites').classList.contains('active')) {
         renderFavouritesPage();
       }
     }
+    function pruneFavs() {
+      if (!PRODUCTS.length && !window.__remoteLoaded) return;
+      const ids = new Set(PRODUCTS.map(p => Number(p.id)));
+      const clean = [...favourites].map(Number).filter(i => ids.has(i));
+      if (clean.length !== favourites.size || [...favourites].some(i => typeof i !== 'number')) { favourites = new Set(clean); saveFavs(); }
+    }
     function syncFavBadge() {
+      pruneFavs();
       const b = document.getElementById('favBadge');
       if (b) {
         b.innerText = favourites.size; b.style.display = favourites.size > 0 ? 'flex' : 'none';
@@ -1117,26 +1033,24 @@
       syncCartIndicators();
       syncFavBadge();
       setActiveTab('tabHome');
-      initFirestoreSync();
-      logVisit();
 
-      // Deep link support: https://t.me/<bot>?startapp=p<id> opens that product directly
+      loadRemoteData().finally(() => {
+        handleDeepLink();
+        setTimeout(hideSplash, Math.max(0, 700 - (Date.now() - INIT_T0)));
+      });
+      setTimeout(hideSplash, 9500);
+    }
+    function hideSplash() {
+      const splash = document.getElementById('splashScreen');
+      if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 400); }
+    }
+    // Deep links: Telegram startapp=p<id> or web #p<id>
+    function handleDeepLink() {
+      let pid = NaN;
       const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param || '';
-      if (startParam.startsWith('p')) {
-        const pid = parseInt(startParam.slice(1));
-        if (!isNaN(pid) && PRODUCTS.some(p => p.id === pid)) viewProductDetails(pid);
-      }
-
-      // Hide the branded splash once everything is ready (small minimum
-      // delay so it doesn't just flash on fast connections).
-      setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 400); }
-      }, 700);
-
-      // Open admin from the URL (index.html#admin) — no customer-facing
-      // button, so regular shoppers never see it.
-      if (window.location.hash === '#admin') navigateTo('screenAdmin');
+      if (startParam.startsWith('p')) pid = parseInt(startParam.slice(1));
+      else { const m = location.hash.match(/^#p(\d+)$/); if (m) pid = +m[1]; }
+      if (!isNaN(pid) && PRODUCTS.some(p => p.id === pid)) viewProductDetails(pid);
     }
     // ── PRODUCT DETAILS SHARE MENU ──
 
@@ -1221,7 +1135,6 @@ document.addEventListener("click", function(event) {
         if (id==='screenCart') renderCartPage();
         if (id==='screenPayment') renderPaymentPage();
         if (id==='screenProfile') renderProfilePage();
-        if (id==='screenAdmin') renderAdminPage();
         if (id==='screenFavourites') renderFavouritesPage();
       } catch (err) {
         console.error('navigateTo render error for', id, err);
@@ -1385,7 +1298,7 @@ document.addEventListener("click", function(event) {
     function renderFilterBrandRow() {
       const row = document.getElementById('fBrandRow'); row.innerHTML = '';
       const brandsInUse = [...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))];
-      const brands = brandsInUse.length ? brandsInUse : BRANDS_LIST;
+      const brands = [...new Set([...BRANDS_LIST, ...brandsInUse])];
       const allBtn = document.createElement('button');
       allBtn.className = `fpill brand-active ${draftBrands.size===0?'active':''}`; allBtn.innerText = 'Все бренды';
       allBtn.onclick = () => { draftBrands.clear(); renderFilterBrandRow(); updateApplyButtonCount(); };
@@ -1568,13 +1481,8 @@ document.addEventListener("click", function(event) {
       if(!address.value.trim()){setError(address,"Укажите адрес!");return;}
       const orderId='#'+Math.random().toString(36).substr(2,8).toUpperCase();
       const now=new Date();
-      const tg=window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const newOrder={id:orderId,date:now.toLocaleDateString('ru-RU')+', '+now.toTimeString().slice(0,5),status:['Ожидает оплаты','Ожидает подтверждения'],phone:phone.value.trim(),fio:fio.value.trim(),address:address.value.trim(),delivery:document.getElementById("formDelivery").value,items:selectedEntries.map(([,i])=>({name:i.product.name,img:i.product.images[0],qty:i.qty,price:i.product.price})),total:selectedEntries.reduce((a,[,i])=>a+i.product.price*i.qty,0),buyer:{id:tg?.id||null,username:tg?.username||null,firstName:tg?.first_name||null}};
-      savedOrders.unshift(newOrder);
+      savedOrders.unshift({id:orderId,date:now.toLocaleDateString('ru-RU')+', '+now.toTimeString().slice(0,5),status:['Ожидает оплаты','Ожидает подтверждения'],phone:phone.value.trim(),delivery:document.getElementById("formDelivery").value,items:selectedEntries.map(([,i])=>({name:i.product.name,img:i.product.images[0],qty:i.qty,price:i.product.price})),total:selectedEntries.reduce((a,[,i])=>a+i.product.price*i.qty,0)});
       saveOrders();
-      // Also send the order to Firestore so it actually reaches the admin —
-      // without this it would only ever live in the buyer's own browser.
-      if (db) { db.collection('orders').doc(orderId.replace('#','')).set({...newOrder, createdAt: now.toISOString()}).catch(e => console.error('Order sync failed:', e)); }
       // Only the items that were checked get removed from the cart; the rest stay for later.
       selectedEntries.forEach(([k])=>{delete shoppingCart[k];cartSelected.delete(k);});
       saveCart();syncCartIndicators();
@@ -1664,80 +1572,6 @@ document.addEventListener("click", function(event) {
     }
     function cancelOrder(id){const o=savedOrders.find(x=>x.id===id);if(o){o.status=['Отменён'];saveOrders();renderProfilePage();showToast('Заказ отменён');}}
 
-    // ── ADMIN ──
-    function renderAdminPage(){
-      document.getElementById('aStatTotal').innerText=PRODUCTS.length;
-      document.getElementById('aStatCats').innerText=new Set(PRODUCTS.map(p=>p.category)).size;
-      const list=document.getElementById('adminProdList');list.innerHTML='';
-      if(PRODUCTS.length===0){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-secondary);">Нет товаров</div>';return;}
-      PRODUCTS.forEach(p=>{
-        const sold=isSoldOut(p);
-        const card=document.createElement('div');card.className='admin-prod-card';
-        const imgHtml=p.images&&p.images[0]?`<img src="${p.images[0]}" class="admin-prod-img" onerror="this.style.display='none'">`:`<div class="admin-prod-placeholder">🖼️</div>`;
-        const sizes=(p.sizes||[]).map(s=>`<span class="atag atag-size">${s}</span>`).join('');
-        card.innerHTML=`${imgHtml}<div><div class="admin-prod-name">${p.name}</div><div class="admin-prod-meta">Остаток: ${p.stock} шт. · Арт: ${p.sku||'—'}</div><div class="admin-prod-tags"><span class="atag atag-cat">${p.category}</span>${p.brand?`<span class="atag atag-size">${p.brand}</span>`:''}${p.condition?`<span class="atag atag-size">${p.condition}</span>`:''}<span class="atag atag-price">${p.price.toLocaleString()} ₽</span>${sold?'<span class="atag atag-sold">Продано</span>':''}${sizes}</div></div><div class="admin-prod-btns"><button class="btn-a-edit" onclick="aOpenModal(${p.id})">✏️ Изменить</button><button class="btn-a-del" onclick="aAskDelete(${p.id},'${p.name.replace(/'/g,"\\'")}')">🗑️ Удалить</button></div>`;
-        list.appendChild(card);
-      });
-    }
-
-    let aEditingId=null,aCurSizes=[];
-    function aOpenModal(id=null){
-      aEditingId=id;aCurSizes=[];
-      document.getElementById('aImgList').innerHTML='';document.getElementById('aSzTags').innerHTML='';
-      document.getElementById('aModalTitle').innerText=id?'Редактировать товар':'Добавить товар';
-      if(id){
-        const p=PRODUCTS.find(x=>x.id===id);if(!p)return;
-        document.getElementById('afName').value=p.name;document.getElementById('afPrice').value=p.price;
-        document.getElementById('afStock').value=p.stock??1;
-        document.getElementById('afCat').value=p.category;document.getElementById('afDesc').value=p.desc||'';document.getElementById('afSku').value=p.sku||'';
-        document.getElementById('afBrand').value=p.brand||'';document.getElementById('afCondition').value=p.condition||'';document.getElementById('afComplect').value=p.complect||'';
-        aCurSizes=[...(p.sizes||[])];(p.images||['']).forEach(img=>aAddImgRow(img));
-      }else{
-        ['afName','afPrice','afDesc','afSku','afBrand','afCondition','afComplect'].forEach(id=>document.getElementById(id).value='');
-        document.getElementById('afStock').value='1';
-        document.getElementById('afCat').value='Кофты';aAddImgRow('');
-      }
-      aRenderSizes();document.getElementById('aModalOverlay').classList.add('show');
-    }
-    function aCloseModal(){document.getElementById('aModalOverlay').classList.remove('show');}
-    function aAddImgRow(val=''){
-      const row=document.createElement('div');row.className='img-row';
-      row.innerHTML=`<input type="text" class="aform-input aimg-input" placeholder="photo.jpg" value="${val}"><button class="btn-rm-img" onclick="this.parentElement.remove()">✕</button>`;
-      document.getElementById('aImgList').appendChild(row);
-    }
-    function aAddSize(){const inp=document.getElementById('aSzInput'),val=inp.value.trim();if(!val)return;val.split(',').forEach(s=>{const t=s.trim();if(t&&!aCurSizes.includes(t))aCurSizes.push(t);});inp.value='';aRenderSizes();}
-    function aRemoveSize(s){aCurSizes=aCurSizes.filter(x=>x!==s);aRenderSizes();}
-    function aRenderSizes(){const c=document.getElementById('aSzTags');c.innerHTML='';aCurSizes.forEach(s=>{const t=document.createElement('div');t.className='sz-tag';t.innerHTML=`${s}<span class="sz-x" onclick="aRemoveSize('${s}')">✕</span>`;c.appendChild(t);});}
-    function aSaveProduct(){
-      const name=document.getElementById('afName').value.trim();
-      const price=parseInt(document.getElementById('afPrice').value);
-      const stock=parseInt(document.getElementById('afStock').value)||0;
-      const cat=document.getElementById('afCat').value;
-      const brand=document.getElementById('afBrand').value.trim();
-      const condition=document.getElementById('afCondition').value.trim();
-      const complect=document.getElementById('afComplect').value.trim();
-      const desc=document.getElementById('afDesc').value.trim();
-      const sku=document.getElementById('afSku').value.trim();
-      const images=Array.from(document.querySelectorAll('.aimg-input')).map(i=>i.value.trim()).filter(Boolean);
-      if(!name){showToast('Введите название!');return;}
-      if(!price||price<=0){showToast('Введите цену!');return;}
-      if(images.length===0){showToast('Добавьте фото!');return;}
-      if(aCurSizes.length===0){showToast('Добавьте размеры!');return;}
-      if(aEditingId){
-        const idx=PRODUCTS.findIndex(p=>p.id===aEditingId);
-        if(idx!==-1)PRODUCTS[idx]={...PRODUCTS[idx],name,price,stock,category:cat,brand,condition,complect,desc,sku,images,sizes:aCurSizes};
-        showToast('Обновлено ✅',true);
-      }else{
-        PRODUCTS.push({id:Date.now(),name,price,stock,category:cat,brand,condition,complect,desc,sku,images,sizes:aCurSizes});
-        showToast('Добавлено ✅',true);
-      }
-      saveProducts();renderItemsGrid();aCloseModal();renderAdminPage();
-    }
-    let aDelId=null;
-    function aAskDelete(id,name){aDelId=id;document.getElementById('aDelName').innerText=`"${name}"`;document.getElementById('aDelOverlay').classList.add('show');}
-    function aCloseConfirm(){document.getElementById('aDelOverlay').classList.remove('show');aDelId=null;}
-    function aConfirmDelete(){if(!aDelId)return;PRODUCTS=PRODUCTS.filter(p=>p.id!==aDelId);saveProducts();renderItemsGrid();aCloseConfirm();renderAdminPage();showToast('Удалено',true);}
-
     // ── TOAST ──
     function showToast(text,isSuccess=false){
       const t=document.getElementById("toastNode");t.innerText=text;
@@ -1745,9 +1579,223 @@ document.addEventListener("click", function(event) {
       clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),3000);
     }
 
-    document.getElementById('aModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)aCloseModal();});
-    document.getElementById('aDelOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)aCloseConfirm();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){aCloseModal();aCloseConfirm();}});
+
+    // ═══ ENHANCEMENTS ═══
+    const ADMIN_EMAIL = 'r99373215@gmail.com';
+    const ADMIN_USERNAME = 'xqwex0';
+    const _tgUser = () => window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const _esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    // 1. Smooth fade: darken, switch screen, brighten
+    document.body.insertAdjacentHTML('beforeend', '<div id="fadeVeil"></div>');
+    const _nav = navigateTo;
+    navigateTo = function (id) {
+      const v = document.getElementById('fadeVeil'), t = document.getElementById(id);
+      if (!v || !t || t.classList.contains('active')) { _nav(id); return; }
+      v.classList.add('on');
+      setTimeout(() => { _nav(id); requestAnimationFrame(() => v.classList.remove('on')); }, 160);
+    };
+
+    // 2/3. Orders from menu -> orders section, active only
+    let ordersFilter = 'active';
+    function openActiveOrders() {
+      ordersFilter = 'active'; navigateTo('screenProfile');
+      setTimeout(() => document.getElementById('ordersCountBadge')?.scrollIntoView({behavior:'smooth', block:'start'}), 450);
+    }
+    const _rp = renderProfilePage;
+    renderProfilePage = function () {
+      _rp();
+      const list = document.getElementById('profileOrdersList'); if (!list) return;
+      let chips = document.getElementById('ordFilter');
+      if (!chips) { chips = document.createElement('div'); chips.id = 'ordFilter'; chips.className = 'ord-filter'; list.parentNode.insertBefore(chips, list); }
+      chips.innerHTML = [['active','Активные'],['all','Все']].map(([k,l]) => `<button class="${ordersFilter===k?'on':''}" onclick="ordersFilter='${k}';renderProfilePage()">${l}</button>`).join('');
+      [...list.children].forEach((c, i) => { const o = savedOrders[i]; if (o && ordersFilter === 'active' && o.status.join().includes('Отмен')) c.style.display = 'none'; });
+    };
+
+    // 3. Email notification about every new order
+    function sendOrderEmail(o) {
+      const u = _tgUser();
+      const body = {
+        _subject: `Новый заказ ${o.id} — ${Number(o.total).toLocaleString('ru-RU')} ₽`, _template: 'table', _captcha: 'false',
+        'Заказ': o.id, 'Дата': o.date, 'ФИО': o.fio || '—', 'Телефон': o.phone, 'Доставка': o.delivery, 'Адрес': o.address || '—',
+        'Telegram': u ? '@' + (u.username || '—') + ' (id ' + u.id + ')' : '—',
+        'Товары': o.items.map(i => `${i.name} x${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('; '),
+        'Итого': o.total + ' ₽'
+      };
+      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, { method:'POST', headers:{'Content-Type':'application/json', Accept:'application/json'}, body: JSON.stringify(body) })
+        .then(r => { o.emailed = r.ok; saveOrders(); }).catch(() => { o.emailed = false; saveOrders(); });
+    }
+    const _pco = processCheckoutOrder;
+    processCheckoutOrder = function () {
+      const n = savedOrders.length, fio = document.getElementById('formFio').value.trim(), addr = document.getElementById('formAddress').value.trim();
+      _pco();
+      if (savedOrders.length > n) { const o = savedOrders[0]; o.fio = fio; o.address = addr; o.userId = String(_tgUser()?.id || 'local'); saveOrders(); }
+    };
+
+    // 4. Bans + visitor statistics live in the shared database (checked on every visit)
+    function guestId() {
+      let g = safeGet('shopGuestId', '');
+      if (!g) { g = 'web_' + Math.random().toString(36).slice(2, 12); safeSet('shopGuestId', g); }
+      return g;
+    }
+    function showBan() {
+      if (document.getElementById('banScreen')) return;
+      document.body.insertAdjacentHTML('beforeend', '<div id="banScreen">🚫 Доступ к магазину ограничен.<br>Если это ошибка — напишите в поддержку.</div>');
+    }
+    async function registerVisit() {
+      const t = _tgUser();
+      const id = t?.id ? String(t.id) : guestId();
+      const name = ((t?.first_name || '') + ' ' + (t?.last_name || '')).trim() || 'Гость';
+      try {
+        const r = await sbFetch('/rest/v1/rpc/register_visit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_id: id, p_name: name, p_username: t?.username || '' })
+        });
+        if (r.ok) {
+          const banned = (await r.json()) === true;
+          safeSet('shopBanned', banned ? '1' : '0');
+          if (banned) showBan();
+        }
+      } catch (e) {
+        if (safeGet('shopBanned', '0') === '1') showBan();
+      }
+    }
+
+    // 5. Brands: local cache (the shared list is loaded from the database in loadRemoteData)
+    { const cb = safeParseJSON(safeGet('shopBrands', 'null'), null); if (Array.isArray(cb)) { BRANDS_LIST.length = 0; BRANDS_LIST.push(...cb); } }
+
+    // 6. Every confirmed order is also stored in the shared database (the admin panel reads it)
+    function pushOrderToDb(o) {
+      if (!o || o.dbSent) return;
+      const u = _tgUser();
+      const data = {
+        date: o.date, status: o.status, fio: o.fio || '', phone: o.phone, tg: o.tg || '',
+        tgId: u ? String(u.id) : '', tgUsername: u ? (u.username || '') : '',
+        delivery: o.delivery, address: o.address || '', payMethod: o.payMethod || '',
+        items: o.items, total: o.total
+      };
+      sbFetch('/rest/v1/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ id: o.id, data })
+      }).then(r => { if (r.ok || r.status === 409) { o.dbSent = true; saveOrders(); } }).catch(() => {});
+    }
+
+    // ═══ ORDER FLOW FIX ═══
+    let lastOrder = null;
+    const _pco2 = processCheckoutOrder;
+    processCheckoutOrder = function () {
+      const tgEl = document.getElementById('formTg'); tgEl.classList.remove('invalid-field');
+      const hasItems = Object.keys(shoppingCart).some(k => cartSelected.has(k));
+      if (hasItems && document.getElementById('formFio').value.trim() && document.getElementById('formAddress').value.trim()) {
+        const tg = tgEl.value.trim().replace(/^https?:\/\/t\.me\//, '').replace(/^@/, '');
+        if (!/^[A-Za-z0-9_]{4,32}$/.test(tg)) { setError(tgEl, 'Введите ваш Telegram (@username)'); return; }
+      }
+      const n = savedOrders.length;
+      _pco2();
+      if (savedOrders.length > n) {
+        lastOrder = savedOrders[0];
+        lastOrder.tg = '@' + tgEl.value.trim().replace(/^https?:\/\/t\.me\//, '').replace(/^@/, '');
+        saveOrders(); renderPaymentPage();
+      }
+    };
+    renderPaymentPage = function () {
+      const o = lastOrder || savedOrders[0]; if (!o) return;
+      const c = document.getElementById('paymentProductsList'); c.innerHTML = '';
+      o.items.forEach(i => { const r = document.createElement('div'); r.className = 'pay-prod-row'; r.innerHTML = `<span class="pay-prod-name">${_esc(i.name)}</span><span>${i.qty} × ${Number(i.price).toLocaleString('ru-RU')} ₽</span>`; c.appendChild(r); });
+      document.getElementById('paymentTotalSum').innerText = Number(o.total).toLocaleString('ru-RU') + ' ₽';
+    };
+    // email: sent when the client picks a payment method
+    sendOrderEmail = function (o) {
+      const u = _tgUser();
+      const data = {
+        _subject: `Новый заказ ${o.id} — ${Number(o.total).toLocaleString('ru-RU')} ₽`, _template: 'table', _captcha: 'false',
+        'Заказ': o.id, 'Дата': o.date, 'Оплата': o.payMethod || '—', 'ФИО': o.fio || '—', 'Телефон': o.phone,
+        'Telegram клиента': o.tg || '—', 'Telegram аккаунт': u ? '@' + (u.username || '—') + ' (id ' + u.id + ')' : '—',
+        'Доставка': o.delivery, 'Адрес': o.address || '—',
+        'Товары': o.items.map(i => `${i.name} x${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('; '), 'Итого': o.total + ' ₽'
+      };
+      const viaForm = () => { // fallback that needs no CORS
+        try {
+          let fr = document.getElementById('mailFrame');
+          if (!fr) { fr = document.createElement('iframe'); fr.name = fr.id = 'mailFrame'; fr.style.display = 'none'; document.body.appendChild(fr); }
+          const f = document.createElement('form'); f.method = 'POST'; f.target = 'mailFrame'; f.style.display = 'none';
+          f.action = 'https://formsubmit.co/' + ADMIN_EMAIL;
+          Object.entries(data).forEach(([k, v]) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i); });
+          document.body.appendChild(f); f.submit(); setTimeout(() => f.remove(), 3000); o.emailed = true; saveOrders();
+        } catch (e) { o.emailed = false; saveOrders(); }
+      };
+      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
+        .then(r => r.json()).then(j => {
+          o.emailed = String(j.success) === 'true'; saveOrders();
+          const dev = /^(localhost|127\.|192\.168\.)/.test(location.hostname) || document.getElementById('adminMenuItem')?.style.display === 'flex';
+          if (dev) showToast(o.emailed ? 'Email: ' + (j.message || 'отправлено').slice(0, 90) : 'Email ошибка: ' + (j.message || 'неизвестно').slice(0, 90), o.emailed);
+          console.log('FormSubmit response:', j);
+        })
+        .catch(viaForm);
+    };
+    triggerPaymentUnavailable = function (method) {
+      const o = lastOrder || savedOrders[0];
+      if (o && Date.now() - (o.sentAt || 0) > 20000) { o.sent = true; o.sentAt = Date.now(); o.payMethod = method || '—'; o.status = ['Ожидает подтверждения']; saveOrders(); sendOrderEmail(o); }
+      document.getElementById('paymentAlertOverlay').classList.add('show');
+    };
+
+
+    // ═══ PERSISTENCE: localStorage + Telegram CloudStorage backup ═══
+    const CLOUD_KEYS = ['shopCart', 'shopFavs', 'shopOrders', 'shopForm'];
+    const _cloud = window.Telegram?.WebApp?.CloudStorage;
+    function cloudPut(key, val) {
+      if (!_cloud || !CLOUD_KEYS.includes(key)) return;
+      try {
+        const N = 3500, parts = Math.ceil(val.length / N) || 1;
+        if (parts > 40) return;
+        for (let i = 0; i < parts; i++) _cloud.setItem(`${key}_${i}`, val.slice(i * N, (i + 1) * N));
+        _cloud.setItem(`${key}_n`, String(parts));
+      } catch (e) {}
+    }
+    const _safeSet0 = safeSet;
+    safeSet = function (key, value) { _safeSet0(key, value); cloudPut(key, value); };
+    function cloudGet(key) {
+      return new Promise(res => {
+        if (!_cloud) return res(null);
+        _cloud.getItem(`${key}_n`, (e, n) => {
+          n = parseInt(n); if (e || !n) return res(null);
+          const ks = Array.from({ length: n }, (_, i) => `${key}_${i}`);
+          _cloud.getItems(ks, (e2, o) => res(e2 || !o ? null : ks.map(k => o[k] || '').join('')));
+        });
+      });
+    }
+    // checkout form is remembered too
+    const FORM_IDS = ['formFio', 'formPhone', 'formTg', 'formDelivery', 'formAddress'];
+    function saveForm() { const o = {}; FORM_IDS.forEach(i => { const e = document.getElementById(i); if (e) o[i] = e.value; }); safeSet('shopForm', JSON.stringify(o)); }
+    function loadForm() { const o = safeParseJSON(safeGet('shopForm', '{}'), {}); FORM_IDS.forEach(i => { const e = document.getElementById(i); if (e && o[i]) e.value = o[i]; }); }
+    FORM_IDS.forEach(i => { const e = document.getElementById(i); if (e) { e.addEventListener('input', saveForm); e.addEventListener('change', saveForm); } });
+    loadForm();
+    // restore from Telegram cloud when local data is missing (new device / cleared cache)
+    (async function restoreFromCloud() {
+      if (!_cloud) return;
+      let changed = false;
+      for (const k of CLOUD_KEYS) {
+        if (safeGet(k, null) !== null) continue;
+        const v = await cloudGet(k);
+        if (v) { _safeSet0(k, v); changed = true; }
+      }
+      if (!changed) return;
+      PRODUCTS = safeParseJSON(safeGet('shopProducts', 'null'), PRODUCTS);
+      shoppingCart = safeParseJSON(safeGet('shopCart', '{}'), {});
+      savedOrders = safeParseJSON(safeGet('shopOrders', '[]'), []);
+      const f = safeParseJSON(safeGet('shopFavs', '[]'), []); favourites = new Set(Array.isArray(f) ? f : []);
+      { const sb = safeParseJSON(safeGet('shopBrands', 'null'), null); if (Array.isArray(sb)) { BRANDS_LIST.length = 0; BRANDS_LIST.push(...sb); } }
+      loadForm(); renderItemsGrid(); syncCartIndicators(); syncFavBadge();
+    })();
+
+    // Orders are also stored in the shared database
+    const _sendOrderEmail2 = sendOrderEmail;
+    sendOrderEmail = function (o) { _sendOrderEmail2(o); pushOrderToDb(o); };
+    window.addEventListener('load', () => {
+      savedOrders.filter(o => o.sent && o.emailed !== true).forEach(o => _sendOrderEmail2(o));
+      savedOrders.filter(o => o.sent && !o.dbSent).forEach(o => pushOrderToDb(o));
+    });
+    registerVisit();
 
     window.onload = init;
   </script>
