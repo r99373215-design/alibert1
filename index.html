@@ -1610,7 +1610,7 @@ document.addEventListener("click", function(event) {
       if(count===0){list.innerHTML='<div class="profile-empty">У вас пока нет заказов</div>';return;}
       savedOrders.forEach(order=>{
         const card=document.createElement('div');card.className='order-card';
-        const badges=order.status.map(s=>{let cls='badge-yellow';if(s.includes('подтвер'))cls='badge-blue';if(s.includes('Отмен'))cls='badge-red';return`<span class="order-badge ${cls}">${s}</span>`;}).join('');
+        const badges=order.status.map(s=>{let cls='badge-yellow';if(s.includes('подтвер')||s.includes('Отправлен'))cls='badge-blue';if(s.includes('Выполнен'))cls='badge-green';if(s.includes('Отмен'))cls='badge-red';return`<span class="order-badge ${cls}">${s}</span>`;}).join('');
         const items=order.items.map(i=>`<div class="order-product-row"><img src="${i.img}" class="order-product-img" alt=""><span class="order-product-name">${i.name}</span><span class="order-product-qty">${i.qty} шт.</span></div>`).join('');
         card.innerHTML=`<div style="margin-bottom:4px;"><span class="order-id">Заказ ${order.id}</span></div><div class="order-date">📅 ${order.date}</div><div class="order-status-row">${badges}</div><div class="order-meta-row">📞 ${order.phone}</div><div class="order-meta-row">🚚 ${order.delivery}</div><hr class="order-divider">${items}<div class="order-total-row"><span class="order-total-price">${order.total.toLocaleString()}₽</span><span class="order-total-items">${order.items.length} товар(ов)</span></div><div class="order-actions"><button class="btn-order-pay" onclick="navigateTo('screenPayment')">Оплатить</button><button class="btn-order-cancel" onclick="cancelOrder('${order.id}')">Отменить</button></div>`;
         list.appendChild(card);
@@ -1842,6 +1842,32 @@ document.addEventListener("click", function(event) {
       savedOrders.filter(o => o.sent && !o.dbSent).forEach(o => pushOrderToDb(o));
     });
     registerVisit();
+    // Order statuses set in the admin panel are shown to the customer
+    async function syncOrderStatuses(rerender) {
+      const ids = savedOrders.filter(o => o.dbSent).map(o => o.id);
+      if (!ids.length) return;
+      try {
+        const r = await sbFetch('/rest/v1/rpc/get_order_statuses', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_ids: ids })
+        });
+        if (!r.ok) return;
+        const rows = await r.json();
+        let changed = false;
+        rows.forEach(row => {
+          const o = savedOrders.find(x => x.id === row.id);
+          if (o && Array.isArray(row.status) && row.status.length && JSON.stringify(o.status) !== JSON.stringify(row.status)) { o.status = row.status; changed = true; }
+        });
+        if (changed) { saveOrders(); if (rerender) _renderProfilePageOrig(); }
+      } catch (e) {}
+    }
+    const _renderProfilePageOrig = renderProfilePage;
+    renderProfilePage = function () { _renderProfilePageOrig(); syncOrderStatuses(true); };
+    const _cancelOrderOrig = cancelOrder;
+    cancelOrder = function (id) {
+      _cancelOrderOrig(id);
+      sbFetch('/rest/v1/rpc/cancel_order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: id }) }).catch(() => {});
+    };
+    window.addEventListener('load', () => setTimeout(() => syncOrderStatuses(true), 1500));
 
     window.onload = init;
   </script>
