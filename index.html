@@ -211,8 +211,8 @@
     .prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative;}
     .prod-img-box{width:100%;aspect-ratio:3/4;position:relative;cursor:pointer;}
     .prod-img-box img{width:100%;height:100%;object-fit:cover;}
-    .prod-sold-overlay{position:absolute;inset:0;;display:block;align-items:center;justify-content:center;z-index:3;}
-    .prod-sold-label{background:#ff3b30;color:#fff;font-size:12px;font-weight:800;padding:6px 14px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;}
+    .prod-sold-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;background:rgba(0,0,0,0.38);pointer-events:none;}
+    .prod-sold-label{background:#ff3b30;color:#fff;font-size:13px;font-weight:800;padding:7px 18px;border-radius:20px;letter-spacing:0.6px;text-transform:uppercase;box-shadow:0 4px 16px rgba(0,0,0,0.45);}
     .prod-heart-btn{position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(0,0,0,0.35);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;backdrop-filter:blur(4px);}
     .prod-heart-btn.active svg{fill:#ff3b30;stroke:#ff3b30;}
     .prod-menu-btn{position:absolute;top:8px;left:8px;width:30px;height:30px;background:rgba(0,0,0,0.35);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;backdrop-filter:blur(4px);color:#fff;}
